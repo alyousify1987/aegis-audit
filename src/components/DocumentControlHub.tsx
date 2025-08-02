@@ -1,13 +1,21 @@
 // src/components/DocumentControlHub.tsx
 
-import { useEffect, useState } from 'react';
-import { Box, Typography, Button, List, ListItem, ListItemText, CircularProgress, Alert, Chip, Stack, Paper } from '@mui/material'; // Import Paper
+import { useEffect, useState, useMemo } from 'react';
+import {
+  Box, Typography, Button, List, ListItem, ListItemText,
+  CircularProgress, Alert, Chip, Stack, Paper, TextField,
+  FormControl, InputLabel, Select, MenuItem
+} from '@mui/material';
 import { useDocumentStore } from '../store/document.store';
 import { AddDocumentModal } from './AddDocumentModal';
 import type { IAegisDocument } from '../services/db.service';
 
 export function DocumentControlHub() {
-  const { documents, isLoading, alerts, fetchDocuments } = useDocumentStore();
+  const {
+    documents, isLoading, alerts, fetchDocuments,
+    searchTerm, setSearchTerm, statusFilter, setStatusFilter
+  } = useDocumentStore();
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -18,20 +26,50 @@ export function DocumentControlHub() {
     setIsModalOpen(true);
   };
 
+  // This logic filters the documents based on the search and status filters from the store
+  const filteredDocuments = useMemo(() => {
+    return documents.filter(doc => {
+      const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            doc.docNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'All' || doc.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [documents, searchTerm, statusFilter]);
+
   return (
-    // --- START OF THE FIX: Use Paper for a better layout ---
     <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        Intelligent Document Control Hub ({documents.length} total)
-      </Typography>
-      
-      <Button variant="contained" onClick={handleOpenModal} sx={{ mb: 2 }}>
-        Add New Document
-      </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h5">
+          Intelligent Document Control Hub ({filteredDocuments.length} of {documents.length} total)
+        </Typography>
+        <Button variant="contained" onClick={handleOpenModal}>
+          Add New Document
+        </Button>
+      </Box>
+
+      {/* The Search and Filter UI */}
+      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+        <TextField
+          label="Search by Title or Doc #"
+          variant="outlined"
+          fullWidth
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Filter by Status</InputLabel>
+          <Select value={statusFilter} label="Filter by Status" onChange={(e) => setStatusFilter(e.target.value as any)}>
+            <MenuItem value="All">All Statuses</MenuItem>
+            <MenuItem value="Draft">Draft</MenuItem>
+            <MenuItem value="Published">Published</MenuItem>
+            <MenuItem value="Archived">Archived</MenuItem>
+          </Select>
+        </FormControl>
+      </Stack>
       
       {isLoading ? ( <CircularProgress /> ) : (
-        <List sx={{ maxHeight: '60vh', overflowY: 'auto' }}>
-          {documents.map((doc) => (
+        <List sx={{ maxHeight: 'calc(60vh - 80px)', overflowY: 'auto' }}>
+          {filteredDocuments.map((doc) => (
             <ListItem key={doc.id} divider sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', py: 2 }}>
               <ListItemText
                 primary={`${doc.title} (Rev ${doc.revision})`}
@@ -54,6 +92,5 @@ export function DocumentControlHub() {
       
       <AddDocumentModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </Paper>
-    // --- END OF THE FIX ---
   );
 }

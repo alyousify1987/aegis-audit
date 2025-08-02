@@ -10,8 +10,12 @@ interface DocumentState {
   documents: IAegisDocument[];
   alerts: Record<number, string[]>;
   isLoading: boolean;
+  searchTerm: string;
+  statusFilter: 'All' | 'Draft' | 'Published' | 'Archived';
   fetchDocuments: () => Promise<void>;
   addDocument: (newDoc: Omit<IAegisDocument, 'id'>) => Promise<void>;
+  setSearchTerm: (term: string) => void;
+  setStatusFilter: (status: 'All' | 'Draft' | 'Published' | 'Archived') => void;
 }
 
 // 2. CREATE THE ZUSTAND STORE
@@ -20,6 +24,8 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   documents: [],
   alerts: {},
   isLoading: true,
+  searchTerm: '',
+  statusFilter: 'All',
 
   // --- ACTIONS ---
   fetchDocuments: async () => {
@@ -44,4 +50,8 @@ export const useDocumentStore = create<DocumentState>((set) => ({
     // After adding, call the fetch action to get the latest state for all components
     useDocumentStore.getState().fetchDocuments();
   },
+
+  setSearchTerm: (term) => set({ searchTerm: term }),
+
+  setStatusFilter: (status) => set({ statusFilter: status }),
 }));
