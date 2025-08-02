@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  app:
+    # Build the Docker image from the Dockerfile in the current directory
+    build: .
+    # Name the container for easier management
+    container_name: aegis_audit_dev
+    # Map port 5173 on your local machine to port 5173 inside the container
+    ports:
+      - "5173:5173"
+    # Mount the current directory on your host machine to the /app directory in the container
+    # This allows for live code changes without rebuilding the image
+    volumes:
+      - .:/app
+      # Add a specific volume for node_modules to prevent it from being overwritten
+      - /app/node_modules
