@@ -11,13 +11,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     if (!documents) return [];
     return documents.filter((doc: IAegisDocument) => (doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || doc.docNumber.toLowerCase().includes(searchTerm.toLowerCase())) && (statusFilter === 'All' || doc.status === statusFilter));
   },
-  fetchDocuments: async () => {
-    set({ isLoading: true });
-    const docsFromDb = await db.documents.toArray();
-    const newAlerts: Record<number, string[]> = {};
-    for (const doc of docsFromDb) { if (doc.id) { const results = await ruleService.checkDocument(doc); if (results.length > 0) { newAlerts[doc.id] = results; } } }
-    set({ documents: docsFromDb, alerts: newAlerts, isLoading: false });
-  },
+  fetchDocuments: async () => { set({ isLoading: true }); const docsFromDb = await db.documents.toArray(); const newAlerts: Record<number, string[]> = {}; for (const doc of docsFromDb) { if (doc.id) { const results = await ruleService.checkDocument(doc); if (results.length > 0) { newAlerts[doc.id] = results; } } } set({ documents: docsFromDb, alerts: newAlerts, isLoading: false }); },
   addDocument: async (newDocData) => { await db.documents.add(newDocData as IAegisDocument); get().fetchDocuments(); },
   setSearchTerm: (term) => set({ searchTerm: term }),
   setStatusFilter: (status) => set({ statusFilter: status }),
