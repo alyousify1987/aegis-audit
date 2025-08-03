@@ -1,57 +1,83 @@
 // src/store/document.store.ts
 
 import { create } from 'zustand';
-import { db } from '../services/db.service';
-import type { IAegisDocument } from '../services/db.service';
-import { ruleService } from '../services/rule.service';
+import { Document } from '../types/document.types';
+import { db } from '../services/database.service'; // Now used
+import { ocrService } from '../services/ocr.service'; // Now used
+import { ruleService } from '../services/rule.service'; // Now used
 
-// 1. DEFINE THE STATE AND ACTIONS
+// Define the interface for the state and actions
 interface DocumentState {
-  documents: IAegisDocument[];
-  alerts: Record<number, string[]>;
+  documents: Document[];
   isLoading: boolean;
-  searchTerm: string;
-  statusFilter: 'All' | 'Draft' | 'Published' | 'Archived';
+  alerts: { id: string; message: string; type: 'info' | 'warning' | 'error' }[];
   fetchDocuments: () => Promise<void>;
-  addDocument: (newDoc: Omit<IAegisDocument, 'id'>) => Promise<void>;
-  setSearchTerm: (term: string) => void;
-  setStatusFilter: (status: 'All' | 'Draft' | 'Published' | 'Archived') => void;
+  addDocument: (newDocData: Omit<Document, 'id' | 'docNumber'>, file: File) => Promise<void>;
+  clearAlerts: () => void;
 }
 
-// 2. CREATE THE ZUSTAND STORE
-export const useDocumentStore = create<DocumentState>((set) => ({
-  // --- STATE ---
+export const useDocumentStore = create<DocumentState>((set, get) => ({
   documents: [],
-  alerts: {},
-  isLoading: true,
-  searchTerm: '',
-  statusFilter: 'All',
+  isLoading: false,
+  alerts: [],
 
-  // --- ACTIONS ---
+  // Fetches all documents from the IndexedDB
   fetchDocuments: async () => {
     set({ isLoading: true });
-    const docsFromDb = await db.documents.toArray();
-    
-    const newAlerts: Record<number, string[]> = {};
-    for (const doc of docsFromDb) {
-      if (doc.id) {
-        const results = await ruleService.checkDocument(doc);
-        if (results.length > 0) {
-          newAlerts[doc.id] = results;
-        }
-      }
+    try {
+      const documents = await db.documents.toArray();
+      set({ documents, isLoading: false });
+    } catch (error) {
+      console.error('Failed to fetch documents:', error);
+      set({
+        isLoading: false,
+        alerts: [...get().alerts, { id: 'fetch-error', message: 'Failed to load documents.', type: 'error' }],
+      });
     }
-    
-    set({ documents: docsFromDb, alerts: newAlerts, isLoading: false });
   },
 
-  addDocument: async (newDocData) => {
-    await db.documents.add(newDocData as IAegisDocument);
-    // After adding, call the fetch action to get the latest state for all components
-    useDocumentStore.getState().fetchDocuments();
+  // Adds a new document, performs OCR, and evaluates rules
+  addDocument: async (newDocData, file) => {
+    set({ isLoading: true });
+    try {
+      // 1. Perform OCR on the document file
+      const textContent = await ocrService.recognize(file);
+
+      // 2. Evaluate rules against the new document data
+      const ruleResult = await ruleService.evaluate('document_creation', { ...newDocData, textContent });
+      if (ruleResult.some(res => !res.result)) {
+         console.warn('Document violates creation rules:', ruleResult);
+         // You could create an alert here
+      }
+
+      // 3. Construct the full document object
+      const fullDocument: Omit<Document, 'id'> = {
+        ...newDocData,
+        docNumber: `DOC-${Date.now()}`, // Generate a unique document number
+        content: textContent,
+      };
+
+      // 4. Add the new document to the database
+      await db.documents.add(fullDocument as Document);
+
+      // 5. Refresh the document list from the database
+      get().fetchDocuments();
+       set({
+        alerts: [...get().alerts, { id: `add-success-${Date.now()}`, message: 'Document added successfully.', type: 'info' }],
+      });
+    } catch (error) {
+      console.error('Failed to add document:', error);
+      set({
+        isLoading: false,
+        alerts: [...get().alerts, { id: `add-error-${Date.now()}`, message: 'Failed to add document.', type: 'error' }],
+      });
+    } finally {
+        set({ isLoading: false });
+    }
   },
 
-  setSearchTerm: (term) => set({ searchTerm: term }),
-
-  setStatusFilter: (status) => set({ statusFilter: status }),
+  // Clears all alerts
+  clearAlerts: () => {
+    set({ alerts: [] });
+  }
 }));

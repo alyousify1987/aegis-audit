@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { Box, Typography, CircularProgress, Grid, Paper } from '@mui/material';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { useDocumentStore } from '../store/document.store';
 import { EmptyState } from './EmptyState';
 
@@ -12,18 +12,17 @@ const PIE_COLORS: { [key: string]: string } = {
   Archived: '#9e9e9e',
 };
 
-// Custom Tooltip for a more professional look
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
-    const isPie = !label;
-    // For the stacked bar, we are interested in the second payload item (the blue bar)
-    const data = isPie ? payload[0] : payload[1]; 
-    if (!data) return null; // Safety check
+    const data = payload[0];
+    if (!data) return null;
 
+    const isPie = !label;
+    
+    const finalColor = isPie ? data.payload.fill : data.fill;
     const finalLabel = isPie ? data.name : label;
     const finalValue = data.value;
     const finalName = data.name;
-    const finalColor = isPie ? data.payload.fill : data.fill;
 
     return (
       <Paper elevation={4} sx={{ p: 1.5, bgcolor: '#333' }}>
@@ -44,14 +43,9 @@ export function ReportingAnalyticsHub() {
     fetchDocuments();
   }, [fetchDocuments]);
 
-  // THIS IS THE FULL, CORRECT CODE FOR DERIVING CHART DATA
   const pieChartData = documents.reduce((acc, doc) => {
     const status = acc.find(item => item.name === doc.status);
-    if (status) {
-      status.value += 1;
-    } else {
-      acc.push({ name: doc.status, value: 1 });
-    }
+    if (status) { status.value += 1; } else { acc.push({ name: doc.status, value: 1 }); }
     return acc;
   }, [] as { name: string; value: number }[]);
   
@@ -65,7 +59,7 @@ export function ReportingAnalyticsHub() {
     return Array.from(ownerMap.entries()).map(([name, count]) => ({
       name,
       count,
-      backgroundCount: maxCount - count, // background is the remaining value
+      background: maxCount - count,
     }));
   })();
 
@@ -91,7 +85,7 @@ export function ReportingAnalyticsHub() {
                     <Tooltip content={<CustomTooltip />} />
                     <Legend verticalAlign="bottom" />
                     <Pie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius="80%" labelLine={false}>
-                      {pieChartData.map((entry, index) => (
+                      {pieChartData.map((entry: { name: string }, index: number) => (
                         <Cell key={`cell-${index}`} fill={PIE_COLORS[entry.name] || '#8884d8'} />
                       ))}
                     </Pie>
@@ -104,11 +98,11 @@ export function ReportingAnalyticsHub() {
                 <Typography variant="h6" align="center" sx={{ mb: 1 }}>Documents by Owner</Typography>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barChartData} layout="vertical" margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
-                    <YAxis type="category" dataKey="name" stroke="#e0e0e0" axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="name" stroke="#e0e0e0" axisLine={false} tickLine={false} width={80} />
                     <XAxis type="number" hide domain={[0, 'dataMax']} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }} />
                     <Bar dataKey="count" fill="#7df9ff" name="Number of Documents" radius={8} stackId="a" barSize={20} />
-                    <Bar dataKey="backgroundCount" fill="#333" radius={8} stackId="a" isAnimationActive={false} barSize={20} />
+                    <Bar dataKey="background" fill="#333" radius={8} stackId="a" isAnimationActive={false} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </Paper>

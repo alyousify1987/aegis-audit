@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { useDocumentStore } from '../store/document.store';
 import { AddDocumentModal } from './AddDocumentModal';
-import type { IAegisDocument } from '../services/db.service';
+// The unused 'IAegisDocument' type import has been removed from this file.
 
 export function DocumentControlHub() {
   const {
@@ -26,11 +26,11 @@ export function DocumentControlHub() {
     setIsModalOpen(true);
   };
 
-  // This logic filters the documents based on the search and status filters from the store
   const filteredDocuments = useMemo(() => {
     return documents.filter(doc => {
-      const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            doc.docNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      const matchesSearch = doc.title.toLowerCase().includes(lowerSearchTerm) ||
+                            doc.docNumber.toLowerCase().includes(lowerSearchTerm);
       const matchesStatus = statusFilter === 'All' || doc.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -47,7 +47,6 @@ export function DocumentControlHub() {
         </Button>
       </Box>
 
-      {/* The Search and Filter UI */}
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <TextField
           label="Search by Title or Doc #"
