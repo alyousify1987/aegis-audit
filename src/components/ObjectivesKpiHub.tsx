@@ -1,44 +1,24 @@
 // src/components/ObjectivesKpiHub.tsx
 
-import { useEffect } from 'react';
-import { Box, Typography, List, ListItem, ListItemText, CircularProgress, Tooltip, Paper } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Box, Typography, List, ListItem, ListItemText, CircularProgress, Tooltip, Paper, Button, Stack } from '@mui/material';
 import { useKpiStore } from '../store/kpi.store';
 import type { IKpi } from '../services/db.service';
 import { EmptyState } from './EmptyState';
+import { UpdateKpiModal } from './UpdateKpiModal'; // Import our new modal
 
-// This is the new, custom progress bar component built to your specifications.
-// It fulfills the RFP's requirement for an "aesthetically pleasing visualization".
+// The KpiProgressBar helper component is now more compact
 function KpiProgressBar({ kpi }: { kpi: IKpi }) {
-  // Calculate percentage, ensuring it's between 0 and 100.
   const percentage = kpi.target > 0 ? Math.min(Math.round((kpi.value / kpi.target) * 100), 100) : 0;
-  
-  // Use colors that align with the application's theme and provide clear status.
-  let progressColor = '#7df9ff'; // Primary Accent Color (Electric Blue)
-  if (percentage < 50) progressColor = '#ff9800'; // Warning Orange
-  if (percentage >= 100) progressColor = '#4caf50'; // Success Green
+  let progressColor = '#7df9ff';
+  if (percentage < 50) progressColor = '#ff9800';
+  if (percentage >= 100) progressColor = '#4caf50';
 
   return (
     <Tooltip title={`${kpi.value} / ${kpi.target} (${percentage}%)`} placement="top" arrow>
       <Box sx={{ width: '100%' }}>
-        <Typography variant="body2" sx={{ textAlign: 'right', mb: 0.5, color: 'text.secondary' }}>
-          {percentage}%
-        </Typography>
-        {/* The Track: The full-height, light-grey background you envisioned. */}
-        <Box sx={{
-          height: '8px',
-          width: '100%',
-          bgcolor: 'rgba(255, 255, 255, 0.1)', // A subtle, semi-transparent white for the track
-          borderRadius: '4px',
-          overflow: 'hidden',
-        }}>
-          {/* The Fill: The vibrant blue bar showing progress. */}
-          <Box sx={{
-            height: '100%',
-            width: `${percentage}%`,
-            bgcolor: progressColor,
-            borderRadius: '4px',
-            transition: 'width 0.4s ease-in-out', // A smooth animation for a modern feel
-          }} />
+        <Box sx={{ height: '8px', width: '100%', bgcolor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+          <Box sx={{ height: '100%', width: `${percentage}%`, bgcolor: progressColor, borderRadius: '4px', transition: 'width 0.4s ease-in-out' }} />
         </Box>
       </Box>
     </Tooltip>
@@ -47,20 +27,33 @@ function KpiProgressBar({ kpi }: { kpi: IKpi }) {
 
 export function ObjectivesKpiHub() {
   const { kpis, isLoading, fetchKpis } = useKpiStore();
+  
+  // --- START OF CHANGES ---
+  // Local state to manage which KPI is selected and if the modal is open
+  const [selectedKpi, setSelectedKpi] = useState<IKpi | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchKpis();
   }, [fetchKpis]);
 
+  // Handler to open the modal with the correct KPI
+  const handleOpenModal = (kpi: IKpi) => {
+    setSelectedKpi(kpi);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedKpi(null);
+  };
+  // --- END OF CHANGES ---
+
   return (
-    // Using the Paper component provides the consistent "Card/Surface Background" from the RFP.
     <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
       <Typography variant="h5" sx={{ mb: 2 }}>Objectives & KPI Hub</Typography>
       
-      {isLoading ? ( 
-        <CircularProgress /> 
-      ) : (
-        // Handle the "zero data" case gracefully.
+      {isLoading ? ( <CircularProgress /> ) : (
         kpis.length === 0 ? (
           <Box sx={{ height: 300, display: 'flex' }}>
             <EmptyState title="No KPIs Defined" message="Key Performance Indicators will be displayed here once they are created." />
@@ -68,19 +61,30 @@ export function ObjectivesKpiHub() {
         ) : (
           <List>
             {kpis.map((kpi) => (
-              <ListItem key={kpi.id} divider sx={{ py: 2 }}>
+              <ListItem key={kpi.id} divider sx={{ py: 1.5 }}>
                 <ListItemText
                   primary={kpi.name}
-                  secondary={`Period: ${kpi.period}`}
+                  secondary={`Target: ${kpi.target} | Period: ${kpi.period}`}
                 />
-                <Box sx={{ width: '30%', ml: 2 }}>
-                  <KpiProgressBar kpi={kpi} />
-                </Box>
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '40%', ml: 2 }}>
+                  <Box sx={{ flexGrow: 1 }}>
+                    <KpiProgressBar kpi={kpi} />
+                  </Box>
+                  {/* --- START OF CHANGES --- */}
+                  {/* Add an "Update" button for each KPI */}
+                  <Button variant="outlined" size="small" onClick={() => handleOpenModal(kpi)}>
+                    Update
+                  </Button>
+                  {/* --- END OF CHANGES --- */}
+                </Stack>
               </ListItem>
             ))}
           </List>
         )
       )}
+
+      {/* Render the modal, passing it the selected KPI */}
+      <UpdateKpiModal open={isModalOpen} onClose={handleCloseModal} kpi={selectedKpi} />
     </Paper>
   );
 }

@@ -9,10 +9,14 @@ interface KpiState {
   kpis: IKpi[];
   isLoading: boolean;
   fetchKpis: () => Promise<void>;
+  // --- START OF CHANGE ---
+  // Add the new action for updating a KPI
+  updateKpi: (kpiId: number, newValue: number) => Promise<void>;
+  // --- END OF CHANGE ---
 }
 
 // 2. Create the Zustand store for KPIs
-export const useKpiStore = create<KpiState>((set) => ({
+export const useKpiStore = create<KpiState>((set, get) => ({
   // --- STATE ---
   kpis: [],
   isLoading: true,
@@ -23,4 +27,14 @@ export const useKpiStore = create<KpiState>((set) => ({
     const kpisFromDb = await db.kpis.toArray();
     set({ kpis: kpisFromDb, isLoading: false });
   },
+
+  // --- START OF CHANGE ---
+  // Implement the new updateKpi action
+  updateKpi: async (kpiId, newValue) => {
+    // Use Dexie's update method to change only the 'value' of the specified KPI
+    await db.kpis.update(kpiId, { value: newValue });
+    // Refresh the state for all components by calling the fetch action
+    get().fetchKpis();
+  },
+  // --- END OF CHANGE ---
 }));
