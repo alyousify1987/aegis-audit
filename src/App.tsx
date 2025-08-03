@@ -1,4 +1,5 @@
 // src/App.tsx
+
 import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
 import { useUserStore } from './store/user.store';
 import { MainLayout } from './components/Layout';
@@ -25,11 +26,15 @@ const darkTheme = createTheme({
 
 function App() {
   const { isLoggedIn } = useUserStore();
+
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'background.default' }}>
-        {isLoggedIn ? ( <MainLayout /> ) : (
+      {/* This Box now correctly takes up the full viewport height */}
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {isLoggedIn ? (
+          <MainLayout />
+        ) : (
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexGrow: 1 }}>
             <AppHeader />
           </Box>
@@ -38,4 +43,5 @@ function App() {
     </ThemeProvider>
   );
 }
+
 export default App;

@@ -23,16 +23,16 @@ export function AddDocumentModal({ open, onClose }: AddDocumentModalProps) {
   return (
     <Modal open={open} onClose={onClose}>
       <Box sx={style}>
-        <Typography variant="h6" component="h2">Add New Controlled Document</Typography>
+        <Typography id="add-doc-modal-title" variant="h6" component="h2">Add New Controlled Document</Typography>
         <Stack spacing={2} sx={{ mt: 2 }}>
-          <TextField label="Document Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth />
-          <TextField label="Document Number" value={docNumber} onChange={(e) => setDocNumber(e.target.value)} fullWidth />
-          <TextField label="Revision" type="number" value={revision} onChange={(e) => setRevision(parseInt(e.target.value, 10) || 1)} fullWidth />
-          <TextField label="Tags" value={tags} onChange={(e) => setTags(e.target.value)} fullWidth helperText="Enter comma-separated tags" />
-          <TextField label="Document Owner" value={owner} onChange={(e) => setOwner(e.target.value)} fullWidth />
+          <TextField id="doc-title" label="Document Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth />
+          <TextField id="doc-number" label="Document Number" value={docNumber} onChange={(e) => setDocNumber(e.target.value)} fullWidth />
+          <TextField id="doc-revision" label="Revision" type="number" value={revision} onChange={(e) => setRevision(parseInt(e.target.value, 10) || 1)} fullWidth />
+          <TextField id="doc-tags" label="Tags" value={tags} onChange={(e) => setTags(e.target.value)} fullWidth helperText="Enter comma-separated tags" />
+          <TextField id="doc-owner" label="Document Owner" value={owner} onChange={(e) => setOwner(e.target.value)} fullWidth />
           <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
-            <Select value={status} label="Status" onChange={(e) => setStatus(e.target.value as any)}>
+            <InputLabel id="doc-status-label">Status</InputLabel>
+            <Select labelId="doc-status-label" id="doc-status-select" value={status} label="Status" onChange={(e) => setStatus(e.target.value as any)}>
               <MenuItem value="Draft">Draft</MenuItem><MenuItem value="Published">Published</MenuItem><MenuItem value="Archived">Archived</MenuItem>
             </Select>
           </FormControl>

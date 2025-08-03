@@ -20,16 +20,16 @@ export function AddAuditModal({ open, onClose }: AddAuditModalProps) {
   return (
     <Modal open={open} onClose={onClose}>
       <Box sx={style}>
-        <Typography variant="h6" component="h2">Plan New Audit</Typography>
+        <Typography id="add-audit-modal-title" variant="h6" component="h2">Plan New Audit</Typography>
         <Stack spacing={2} sx={{ mt: 2 }}>
-          <TextField label="Audit Name / Title" variant="outlined" value={auditName} onChange={(e) => setAuditName(e.target.value)} fullWidth required />
+          <TextField id="audit-name" label="Audit Name / Title" variant="outlined" value={auditName} onChange={(e) => setAuditName(e.target.value)} fullWidth required />
           <FormControl fullWidth>
-            <InputLabel>Risk Level</InputLabel>
-            <Select value={riskLevel} label="Risk Level" onChange={(e) => setRiskLevel(e.target.value as 'Low' | 'Medium' | 'High')}>
+            <InputLabel id="audit-risk-level-label">Risk Level</InputLabel>
+            <Select labelId="audit-risk-level-label" id="audit-risk-level-select" value={riskLevel} label="Risk Level" onChange={(e) => setRiskLevel(e.target.value as 'Low' | 'Medium' | 'High')}>
               <MenuItem value="Low">Low</MenuItem><MenuItem value="Medium">Medium</MenuItem><MenuItem value="High">High</MenuItem>
             </Select>
           </FormControl>
-          <TextField label="Scheduled Date" type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} InputLabelProps={{ shrink: true }} fullWidth />
+          <TextField id="audit-scheduled-date" label="Scheduled Date" type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} InputLabelProps={{ shrink: true }} fullWidth />
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}><Button onClick={onClose} variant="outlined">Cancel</Button><Button onClick={handleSubmit} variant="contained">Save Audit</Button></Box>
         </Stack>
       </Box>

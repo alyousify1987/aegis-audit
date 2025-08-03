@@ -1,6 +1,7 @@
 // src/components/DocumentControlHub.tsx
 
-import { useEffect, useState, useMemo } from 'react';
+// --- THE FIX IS HERE: 'useMemo' has been removed from the import list ---
+import { useEffect, useState } from 'react';
 import {
   Box, Typography, Button, List, ListItem, ListItemText,
   CircularProgress, Alert, Chip, Stack, Paper, TextField,
@@ -8,14 +9,15 @@ import {
 } from '@mui/material';
 import { useDocumentStore } from '../store/document.store';
 import { AddDocumentModal } from './AddDocumentModal';
-// The unused 'IAegisDocument' type import has been removed from this file.
 
 export function DocumentControlHub() {
   const {
     documents, isLoading, alerts, fetchDocuments,
-    searchTerm, setSearchTerm, statusFilter, setStatusFilter
+    searchTerm, setSearchTerm, statusFilter, setStatusFilter,
+    filteredDocuments: getFilteredDocuments
   } = useDocumentStore();
   
+  const filteredDocuments = getFilteredDocuments();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -25,16 +27,6 @@ export function DocumentControlHub() {
   const handleOpenModal = () => {
     setIsModalOpen(true);
   };
-
-  const filteredDocuments = useMemo(() => {
-    return documents.filter(doc => {
-      const lowerSearchTerm = searchTerm.toLowerCase();
-      const matchesSearch = doc.title.toLowerCase().includes(lowerSearchTerm) ||
-                            doc.docNumber.toLowerCase().includes(lowerSearchTerm);
-      const matchesStatus = statusFilter === 'All' || doc.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [documents, searchTerm, statusFilter]);
 
   return (
     <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
@@ -49,6 +41,7 @@ export function DocumentControlHub() {
 
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <TextField
+          id="document-search-field"
           label="Search by Title or Doc #"
           variant="outlined"
           fullWidth
@@ -56,8 +49,14 @@ export function DocumentControlHub() {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Filter by Status</InputLabel>
-          <Select value={statusFilter} label="Filter by Status" onChange={(e) => setStatusFilter(e.target.value as any)}>
+          <InputLabel id="status-filter-label">Filter by Status</InputLabel>
+          <Select
+            labelId="status-filter-label"
+            id="status-filter-select"
+            value={statusFilter}
+            label="Filter by Status"
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+          >
             <MenuItem value="All">All Statuses</MenuItem>
             <MenuItem value="Draft">Draft</MenuItem>
             <MenuItem value="Published">Published</MenuItem>
