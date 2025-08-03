@@ -1,9 +1,9 @@
 // src/components/Layout.tsx
-
 import { useState } from 'react';
 import { Box, List, ListItem, ListItemButton, ListItemText, Typography, Divider, Button } from '@mui/material';
 import { useUserStore } from '../store/user.store';
 import { useAuditStore } from '../store/audit.store';
+import { useNcrStore } from '../store/ncr.store';
 import { DocumentControlHub } from './DocumentControlHub';
 import { AuditManagementHub } from './AuditManagementHub';
 import { NcrCapaHub } from './NcrCapaHub';
@@ -13,15 +13,8 @@ import { ExternalAuditorHub } from './ExternalAuditorHub';
 import { ManagementReviewHub } from './ManagementReviewHub';
 import { SettingsAdminHub } from './SettingsAdminHub';
 import { AuditDetails } from './AuditDetails';
-
-// --- THE FIX IS HERE ---
-// We explicitly define the type for a nav item, including the optional 'disabled' property.
-interface NavItem {
-  id: string;
-  label: string;
-  disabled?: boolean;
-}
-
+import { NcrDetails } from './NcrDetails';
+interface NavItem { id: string; label: string; disabled?: boolean; }
 const navItems: NavItem[] = [
   { id: 'docs', label: 'Document Control' },
   { id: 'audits', label: 'Audit Management' },
@@ -32,17 +25,12 @@ const navItems: NavItem[] = [
   { id: 'mrm', label: 'Management Reviews', disabled: true },
   { id: 'settings', label: 'Settings', disabled: true },
 ];
-// --- END OF THE FIX ---
-
 const drawerWidth = 240;
-
 function ActiveView({ viewId }: { viewId: string }) {
   const { selectedAudit } = useAuditStore();
-
-  if (viewId === 'audits' && selectedAudit) {
-    return <AuditDetails />;
-  }
-
+  const { selectedNcr } = useNcrStore();
+  if (viewId === 'audits' && selectedAudit) { return <AuditDetails />; }
+  if (viewId === 'ncrs' && selectedNcr) { return <NcrDetails />; }
   switch (viewId) {
     case 'docs': return <DocumentControlHub />;
     case 'audits': return <AuditManagementHub />;
@@ -55,20 +43,13 @@ function ActiveView({ viewId }: { viewId: string }) {
     default: return <DocumentControlHub />;
   }
 }
-
 export function MainLayout() {
   const [activeView, setActiveView] = useState('docs');
   const { username, logout } = useUserStore();
-
   return (
     <Box sx={{ display: 'flex' }}>
-      <Box
-        component="nav"
-        sx={{ width: drawerWidth, flexShrink: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid rgba(255, 255, 255, 0.12)', bgcolor: 'background.paper' }}
-      >
-        <Box sx={{ p: 2 }}>
-            <Typography variant="h5" component="h1" color="primary">Aegis Audit</Typography>
-        </Box>
+      <Box component="nav" sx={{ width: drawerWidth, flexShrink: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid rgba(255, 255, 255, 0.12)', bgcolor: 'background.paper' }}>
+        <Box sx={{ p: 2 }}><Typography variant="h5" component="h1" color="primary">Aegis Audit</Typography></Box>
         <Divider />
         <List sx={{ flexGrow: 1 }}>
           {navItems.map((item) => (

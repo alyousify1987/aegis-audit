@@ -2,7 +2,6 @@
 
 import { create } from 'zustand';
 
-// 1. Define the shape of our state and the actions that can change it
 interface UserState {
   isLoggedIn: boolean;
   username: string | null;
@@ -10,13 +9,19 @@ interface UserState {
   logout: () => void;
 }
 
-// 2. Create the store
 export const useUserStore = create<UserState>((set) => ({
-  // Initial state
   isLoggedIn: false,
   username: null,
   
-  // Actions
   login: (username) => set({ isLoggedIn: true, username: username }),
-  logout: () => set({ isLoggedIn: false, username: null }),
+  logout: () => {
+    // Also clear the selected items from other stores upon logout
+    useAuditStore.getState().clearSelectedAudit();
+    useNcrStore.getState().clearSelectedNcr();
+    set({ isLoggedIn: false, username: null });
+  },
 }));
+
+// We need to import the other stores here to avoid circular dependency issues
+import { useAuditStore } from './audit.store';
+import { useNcrStore } from './ncr.store';
