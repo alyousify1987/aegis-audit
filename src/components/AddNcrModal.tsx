@@ -1,106 +1,54 @@
-// src/components/AddNcrModal.tsx
+// src/components/NcrCapaHub.tsx
 
-import { useState } from 'react';
-import { Box, Typography, Button, Modal, TextField, Stack, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Box, Typography, Button, List, ListItem, ListItemText, CircularProgress, Chip, Paper } from '@mui/material';
 import { useNcrStore } from '../store/ncr.store';
 import type { INonConformance } from '../services/db.service';
+import { AddNcrModal } from './AddNcrModal'; // This will now import your existing, correct component
 
-// Define the component's props
-interface AddNcrModalProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-// Standard modal styling
-const style = {
-  position: 'absolute' as 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 400,
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  p: 4,
-  borderRadius: 2,
+const getStatusColor = (status: INonConformance['status']): "warning" | "success" => {
+  return status === 'Open' ? 'warning' : 'success';
 };
 
-export function AddNcrModal({ open, onClose }: AddNcrModalProps) {
-  // Get the 'addNcr' action from our new Zustand store.
-  const { addNcr } = useNcrStore();
-  
-  // Local state to manage the form inputs.
-  const [ncrNumber, setNcrNumber] = useState(`NCR-${Math.floor(100 + Math.random() * 900)}`);
-  const [classification, setClassification] = useState<'Minor' | 'Major'>('Minor');
-  const [processOwner, setProcessOwner] = useState('');
+export function NcrCapaHub() {
+  const { ncrs, isLoading, fetchNcrs } = useNcrStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!ncrNumber || !processOwner) {
-      alert('Please fill out all required fields.');
-      return;
-    }
+  useEffect(() => {
+    fetchNcrs();
+  }, [fetchNcrs]);
 
-    const newNcr: Omit<INonConformance, 'id'> = {
-      ncrNumber,
-      classification,
-      processOwner,
-      status: 'Open', // All new NCRs default to 'Open' status.
-      auditId: 1, // Placeholder: In a future step, we'll pass the real auditId in.
-    };
-
-    await addNcr(newNcr);
-    onClose(); // Close the modal after submission.
-    
-    // Reset the form for the next time.
-    setNcrNumber(`NCR-${Math.floor(100 + Math.random() * 900)}`);
-    setClassification('Minor');
-    setProcessOwner('');
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
   };
 
   return (
-    <Modal open={open} onClose={onClose}>
-      <Box sx={style}>
-        <Typography id="add-ncr-modal-title" variant="h6" component="h2">
-          Raise New Non-Conformance
-        </Typography>
-        <Stack spacing={2} sx={{ mt: 2 }}>
-          <TextField
-            id="ncr-number"
-            label="NCR Number"
-            variant="outlined"
-            value={ncrNumber}
-            onChange={(e) => setNcrNumber(e.target.value)}
-            fullWidth
-            required
-          />
-          <TextField
-            id="ncr-process-owner"
-            label="Process Owner"
-            variant="outlined"
-            value={processOwner}
-            onChange={(e) => setProcessOwner(e.target.value)}
-            fullWidth
-            required
-          />
-          <FormControl fullWidth>
-            <InputLabel id="ncr-classification-label">Classification</InputLabel>
-            <Select
-              labelId="ncr-classification-label"
-              id="ncr-classification-select"
-              value={classification}
-              label="Classification"
-              onChange={(e) => setClassification(e.target.value as 'Minor' | 'Major')}
-            >
-              <MenuItem value="Minor">Minor</MenuItem>
-              <MenuItem value="Major">Major</MenuItem>
-            </Select>
-          </FormControl>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-            <Button onClick={onClose} variant="outlined">Cancel</Button>
-            <Button onClick={handleSubmit} variant="contained">Save NCR</Button>
-          </Box>
-        </Stack>
+    <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h5">Non-Conformance & CAPA Hub</Typography>
+        <Button variant="contained" onClick={handleOpenModal}>
+          Raise New NCR
+        </Button>
       </Box>
-    </Modal>
+
+      {isLoading ? (
+        <CircularProgress />
+      ) : (
+        <List>
+          {ncrs.map((ncr) => (
+            <ListItem key={ncr.id} divider>
+              <ListItemText
+                primary={`NCR #: ${ncr.ncrNumber} (${ncr.classification})`}
+                secondary={`Process Owner: ${ncr.processOwner} | From Audit ID: ${ncr.auditId}`}
+              />
+              <Chip label={ncr.status} color={getStatusColor(ncr.status)} size="small" />
+            </ListItem>
+          ))}
+        </List>
+      )}
+
+      {/* This line now correctly renders your existing modal */}
+      <AddNcrModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+    </Paper>
   );
 }

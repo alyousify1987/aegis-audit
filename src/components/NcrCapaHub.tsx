@@ -4,25 +4,20 @@ import { useEffect, useState } from 'react';
 import { Box, Typography, Button, List, ListItem, ListItemText, CircularProgress, Chip, Paper } from '@mui/material';
 import { useNcrStore } from '../store/ncr.store';
 import type { INonConformance } from '../services/db.service';
-import { AddNcrModal } from './AddNcrModal'; // Import our new modal
+import { AddNcrModal } from './AddNcrModal'; // This will now import your existing, correct component
 
 const getStatusColor = (status: INonConformance['status']): "warning" | "success" => {
   return status === 'Open' ? 'warning' : 'success';
 };
 
 export function NcrCapaHub() {
-  // Get state and actions from our new Zustand store
   const { ncrs, isLoading, fetchNcrs } = useNcrStore();
-  
-  // Local state to control the modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch data when the component mounts
   useEffect(() => {
     fetchNcrs();
   }, [fetchNcrs]);
 
-  // The handler now just opens the modal
   const handleOpenModal = () => {
     setIsModalOpen(true);
   };
@@ -52,7 +47,7 @@ export function NcrCapaHub() {
         </List>
       )}
 
-      {/* Render the modal and pass it the state and function to control it */}
+      {/* This line now correctly renders your existing modal */}
       <AddNcrModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </Paper>
   );

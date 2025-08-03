@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Box, List, ListItem, ListItemButton, ListItemText, Typography, Divider, Button } from '@mui/material';
 import { useUserStore } from '../store/user.store';
+import { useAuditStore } from '../store/audit.store';
 import { DocumentControlHub } from './DocumentControlHub';
 import { AuditManagementHub } from './AuditManagementHub';
 import { NcrCapaHub } from './NcrCapaHub';
@@ -11,9 +12,17 @@ import { ObjectivesKpiHub } from './ObjectivesKpiHub';
 import { ExternalAuditorHub } from './ExternalAuditorHub';
 import { ManagementReviewHub } from './ManagementReviewHub';
 import { SettingsAdminHub } from './SettingsAdminHub';
+import { AuditDetails } from './AuditDetails';
 
-// The full list of navigation items
-const navItems = [
+// --- THE FIX IS HERE ---
+// We explicitly define the type for a nav item, including the optional 'disabled' property.
+interface NavItem {
+  id: string;
+  label: string;
+  disabled?: boolean;
+}
+
+const navItems: NavItem[] = [
   { id: 'docs', label: 'Document Control' },
   { id: 'audits', label: 'Audit Management' },
   { id: 'ncrs', label: 'Non-Conformances' },
@@ -23,11 +32,17 @@ const navItems = [
   { id: 'mrm', label: 'Management Reviews', disabled: true },
   { id: 'settings', label: 'Settings', disabled: true },
 ];
+// --- END OF THE FIX ---
 
 const drawerWidth = 240;
 
-// The ActiveView component correctly decides which Hub to show
 function ActiveView({ viewId }: { viewId: string }) {
+  const { selectedAudit } = useAuditStore();
+
+  if (viewId === 'audits' && selectedAudit) {
+    return <AuditDetails />;
+  }
+
   switch (viewId) {
     case 'docs': return <DocumentControlHub />;
     case 'audits': return <AuditManagementHub />;
@@ -47,32 +62,18 @@ export function MainLayout() {
 
   return (
     <Box sx={{ display: 'flex' }}>
-      {/* THIS IS THE FULL, CORRECT SIDEBAR CODE */}
       <Box
         component="nav"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          borderRight: '1px solid rgba(255, 255, 255, 0.12)',
-          bgcolor: 'background.paper'
-        }}
+        sx={{ width: drawerWidth, flexShrink: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid rgba(255, 255, 255, 0.12)', bgcolor: 'background.paper' }}
       >
         <Box sx={{ p: 2 }}>
-            <Typography variant="h5" component="h1" color="primary">
-                Aegis Audit
-            </Typography>
+            <Typography variant="h5" component="h1" color="primary">Aegis Audit</Typography>
         </Box>
         <Divider />
         <List sx={{ flexGrow: 1 }}>
           {navItems.map((item) => (
             <ListItem key={item.id} disablePadding>
-              <ListItemButton
-                selected={activeView === item.id}
-                onClick={() => setActiveView(item.id)}
-                disabled={item.disabled}
-              >
+              <ListItemButton selected={activeView === item.id} onClick={() => setActiveView(item.id)} disabled={item.disabled}>
                 <ListItemText primary={item.label} />
               </ListItemButton>
             </ListItem>
@@ -82,17 +83,10 @@ export function MainLayout() {
         <Box sx={{ p: 2 }}>
             <Typography variant="body2">Logged in as:</Typography>
             <Typography fontWeight="bold">{username}</Typography>
-            <Button onClick={logout} variant="outlined" size="small" fullWidth sx={{ mt: 1 }}>
-                Logout
-            </Button>
+            <Button onClick={logout} variant="outlined" size="small" fullWidth sx={{ mt: 1 }}>Logout</Button>
         </Box>
       </Box>
-
-      {/* Main Content Area */}
-      <Box
-        component="main"
-        sx={{ flexGrow: 1, p: 3, height: '100vh', overflowY: 'auto' }}
-      >
+      <Box component="main" sx={{ flexGrow: 1, p: 3, height: '100vh', overflowY: 'auto' }}>
         <ActiveView viewId={activeView} />
       </Box>
     </Box>
