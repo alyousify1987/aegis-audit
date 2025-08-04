@@ -1,7 +1,7 @@
 // src/store/evidence.store.ts
 
 import { create } from 'zustand';
-import { db } from '../services/db.service';
+import { db, addEncrypted, getDecrypted, whereDecrypted } from '../services/db.service';
 import type { IEvidence, IAegisDocument } from '../services/db.service';
 
 interface EvidenceState {
@@ -18,7 +18,7 @@ export const useEvidenceStore = create<EvidenceState>((set, get) => ({
 
   fetchEvidenceForChecklistItem: async (checklistItemId: number) => {
     set({ isLoading: true });
-    const evidenceItems = await db.evidence.where('checklistItemId').equals(checklistItemId).toArray();
+    const evidenceItems = await whereDecrypted(db.evidence, 'checklistItemId', checklistItemId);
     set(state => ({
       evidenceMap: new Map(state.evidenceMap).set(checklistItemId, evidenceItems),
       isLoading: false,
@@ -26,13 +26,13 @@ export const useEvidenceStore = create<EvidenceState>((set, get) => ({
   },
 
   addEvidence: async (newEvidenceData) => {
-    await db.evidence.add(newEvidenceData as IEvidence);
+    await addEncrypted(db.evidence, newEvidenceData as IEvidence);
     // Re-fetch evidence for the specific item that was updated
     get().fetchEvidenceForChecklistItem(newEvidenceData.checklistItemId);
   },
 
   // Helper to get document details from the document table
   getLinkedDocument: async (documentId: number) => {
-    return await db.documents.get(documentId);
+    return await getDecrypted(db.documents, documentId);
   },
 }));

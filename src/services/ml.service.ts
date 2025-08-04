@@ -2,15 +2,8 @@
 
 import { InferenceSession, Tensor } from 'onnxruntime-web';
 
-// This is the entire add.onnx model, encoded as a Base64 string.
-const modelAsBase64 = "CAISBgoGZGVmYXVsdAiqAgoSCgpmb2F0X2lucHV0EgFCEgoBQiABGAFCBggAiQEaQQoBIgEwGgIgASIAQTQAEkAKATYaAiABEgBBNgASCgFDIAEYAUIINgACCAEaQQoBIgEyGgIgASIAQTQAEkAKATQaAiABEgBBNgASUAoGcGx1Z2luIhtvbm54cnVudGltZS5jb250cmliLndlYnBsdWdpbgpaChhodGVuc29yZmxvd190b19vbm54XzE4NjgyEjQKMjAyMy0wMy0xN1QxNzo0MTozMS41MDc2MjctMDc6MDAaC29ubng6OmFkZGl0GgVBREQtMVAAagxPTk5YIFZFUlNJT04YASgBMAA=";
 
-// A helper function to convert the Base64 string back into binary data (ArrayBuffer)
-async function base64toBuffer(base64: string): Promise<ArrayBuffer> {
-    const dataUrl = `data:application/octet-stream;base64,${base64}`;
-    const response = await fetch(dataUrl);
-    return response.arrayBuffer();
-}
+// Loads the ONNX model from the public directory (public/add.onnx)
 
 
 class OnnxModelRunnerService {
@@ -23,12 +16,9 @@ class OnnxModelRunnerService {
 
   private async initialize() {
     try {
-      // 1. Convert our Base64 string back into the binary model data.
-      const modelBuffer = await base64toBuffer(modelAsBase64);
 
-      // 2. Create the ONNX session directly from the binary data in memory.
-      // This requires no external file loading.
-      this.session = await InferenceSession.create(modelBuffer);
+      // Load the ONNX model from the public directory
+      this.session = await InferenceSession.create('add.onnx');
 
       this.isReady = true;
       console.log("ONNX Model Runner Service initialized successfully FROM EMBEDDED DATA.");

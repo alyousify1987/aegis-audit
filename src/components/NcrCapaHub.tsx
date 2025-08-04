@@ -1,4 +1,3 @@
-// src/components/NcrCapaHub.tsx
 import { useEffect, useState } from 'react';
 import { Box, Typography, Button, List, ListItemText, CircularProgress, Chip, Paper, ListItemButton } from '@mui/material';
 import { useNcrStore } from '../store/ncr.store';

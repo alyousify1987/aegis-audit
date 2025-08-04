@@ -8,8 +8,9 @@ WORKDIR /app
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
 
-# Install project dependencies
-RUN npm install
+
+# Clean up node_modules and package-lock.json before install to avoid npm/rollup native module bug
+RUN rm -rf node_modules package-lock.json && npm install
 
 # Copy the rest of the application's source code to the container
 COPY . .

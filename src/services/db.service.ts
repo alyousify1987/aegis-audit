@@ -1,6 +1,7 @@
 // src/services/db.service.ts
 import Dexie from 'dexie';
 import type { Table } from 'dexie';
+import { encryptionService } from './encryption.service';
 
 export interface IAegisDocument { id?: number; title: string; docNumber: string; revision: number; owner: string; status: 'Draft' | 'Published' | 'Archived'; nextReviewDate: Date; tags?: string[]; }
 export interface IAudit { id?: number; auditName: string; status: 'Planned' | 'In Progress' | 'Completed'; riskLevel: 'Low' | 'Medium' | 'High'; scheduledDate: Date; teamMemberIds?: number[]; }
@@ -12,14 +13,14 @@ export interface ICapaAction { id?: number; ncrId: number; description: string; 
 export interface IEvidence { id?: number; checklistItemId: number; documentId: number; notes: string; timestamp: Date; }
 
 class AegisAuditDB extends Dexie {
-  public documents!: Table<IAegisDocument, number>;
-  public audits!: Table<IAudit, number>;
-  public nonConformances!: Table<INonConformance, number>;
-  public kpis!: Table<IKpi, number>;
-  public checklists!: Table<IChecklist, number>;
-  public checklistItems!: Table<IChecklistItem, number>;
-  public capaActions!: Table<ICapaAction, number>;
-  public evidence!: Table<IEvidence, number>;
+  public documents!: Table<any, number>;
+  public audits!: Table<any, number>;
+  public nonConformances!: Table<any, number>;
+  public kpis!: Table<any, number>;
+  public checklists!: Table<any, number>;
+  public checklistItems!: Table<any, number>;
+  public capaActions!: Table<any, number>;
+  public evidence!: Table<any, number>;
 
   public constructor() {
     super('AegisAuditDB');
@@ -37,9 +38,24 @@ class AegisAuditDB extends Dexie {
     this.version(4).stores({ /* ... */ });
     this.version(3).stores({ /* ... */ });
     this.version(2).stores({ /* ... */ });
+
+    // Removed async Dexie hooks for encryption. All encryption/decryption is handled in wrapper functions only.
   }
 }
+
 export const db = new AegisAuditDB();
+
+// Helper to transparently decrypt records after reading
+async function decryptRecord(record: any) {
+  if (record && record.iv && record.ciphertext) {
+    return await encryptionService.decrypt(record);
+  }
+  return record;
+}
+
+async function decryptRecords(records: any[]) {
+  return Promise.all(records.map(decryptRecord));
+}
 
 export async function seedInitialData() {
   const allTables = db.tables;
@@ -98,3 +114,29 @@ export async function clearTransactionalData() {
 
 // NOTE: I have omitted the older version definitions for brevity, 
 // but they should be present in your final code.
+
+// --- ENCRYPTION-AWARE WRAPPERS ---
+export async function addEncrypted(table: Table<any, number>, data: any) {
+  return table.add(await encryptionService.encrypt(data));
+}
+export async function bulkAddEncrypted(table: Table<any, number>, data: any[]) {
+  return table.bulkAdd(await Promise.all(data.map(d => encryptionService.encrypt(d))));
+}
+export async function putEncrypted(table: Table<any, number>, data: any) {
+  return table.put(await encryptionService.encrypt(data));
+}
+export async function bulkPutEncrypted(table: Table<any, number>, data: any[]) {
+  return table.bulkPut(await Promise.all(data.map(d => encryptionService.encrypt(d))));
+}
+export async function getDecrypted(table: Table<any, number>, key: any) {
+  const record = await table.get(key);
+  return decryptRecord(record);
+}
+export async function whereDecrypted(table: Table<any, number>, index: string, value: any) {
+  const records = await table.where(index).equals(value).toArray();
+  return decryptRecords(records);
+}
+export async function toArrayDecrypted(table: Table<any, number>) {
+  const records = await table.toArray();
+  return decryptRecords(records);
+}

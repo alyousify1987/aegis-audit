@@ -1,15 +1,15 @@
 // src/components/AuditDetails.tsx
 
 import { useEffect } from 'react';
-import { Typography, Button, Paper, CircularProgress, List, ListItem, ListItemText, Select, MenuItem, FormControl } from '@mui/material';
+import { Typography, Button, Paper, CircularProgress, List, ListItem, ListItemText, Select, MenuItem, FormControl, Box } from '@mui/material';
 import { useAuditStore } from '../store/audit.store';
 import { useChecklistStore } from '../store/checklist.store';
 import type { IChecklistItem } from '../services/db.service';
 
 const getStatusColor = (status: IChecklistItem['status']) => {
   switch (status) {
-    case 'Conforming': return 'success.main';
-    case 'Non-Conforming': return 'error.main';
+    case 'Conforming': return 'success';
+    case 'Non-Conforming': return 'error';
     case 'N/A': return 'text.disabled';
     default: return 'text.secondary';
   }
@@ -38,6 +38,8 @@ export function AuditDetails() {
     );
   }
 
+  const { startAudit, completeAudit, reopenAudit } = useAuditStore();
+
   return (
     <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
       <Button variant="outlined" onClick={clearSelectedAudit} sx={{ mb: 2 }}>
@@ -48,6 +50,25 @@ export function AuditDetails() {
       <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
         Status: {selectedAudit.status} | Scheduled for: {new Date(selectedAudit.scheduledDate).toLocaleDateString()}
       </Typography>
+
+      {/* Audit status transition controls */}
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        {selectedAudit.status === 'Planned' && (
+          <Button variant="contained" color="primary" onClick={() => startAudit(selectedAudit.id!)}>
+            Start Audit
+          </Button>
+        )}
+        {selectedAudit.status === 'In Progress' && (
+          <Button variant="contained" color="success" onClick={() => completeAudit(selectedAudit.id!)}>
+            Complete Audit
+          </Button>
+        )}
+        {selectedAudit.status === 'Completed' && (
+          <Button variant="outlined" color="warning" onClick={() => reopenAudit(selectedAudit.id!)}>
+            Reopen Audit
+          </Button>
+        )}
+      </Box>
 
       <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
         {checklist ? checklist.name : 'Audit Checklist'}
